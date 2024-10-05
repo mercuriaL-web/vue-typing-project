@@ -6,21 +6,37 @@ export default {
     return {
       wordsPool: 'Vue is an independent, community-driven project. It was created by Evan You in 2014 as a personal side project. Today, Vue is actively maintained by a team of both full-time and volunteer members from all around the world, where Evan serves as the project lead. You can learn more about the story of Vue in this documentary. Vue\'s development is primarily funded through sponsorships and we have been financially sustainable since 2016. If you or your business benefit from Vue, consider sponsoring us to support Vue\'s development!'.split(' '),
       letters: [],
+      timer: 30,
+      SPM: 0,
       currentIndex: 0,
       letterStates: [],
       cursorStyle: { left: '0px', top: '0px' } // Стиль для курсора
     };
   },
   methods: {
+    calculateSPM () {
+      this.letterStates.forEach((letter) => {
+        if (letter === 'correct') {
+          this.SPM++;
+        }
+      })
+    },
+    reset() {
+      this.letters = [];
+      this.currentIndex = 0;
+      this.letterStates = [];
+      this.timer = 30;
+      this.cursorStyle = { left: '0px', top: '0px' };
+
+    },
     randomWord() {
       const wordsCount = this.wordsPool.length;
       const randomIndex = Math.floor(Math.random() * wordsCount);
       return this.wordsPool[randomIndex];
     },
     newGame() {
-      this.letters = [];
-      this.currentIndex = 0;
-      this.letterStates = [];
+      this.reset();
+      this.SPM = 0;
 
       // Генерация случайных слов
       for (let i = 0; i < 100; i++) {
@@ -35,6 +51,17 @@ export default {
       nextTick(() => {
         this.updateCursorPosition();
       });
+
+      // Запускаем таймер
+      const intervalId = setInterval(() => {
+        this.timer--;
+        if (this.timer === 0) {
+          clearInterval(intervalId);
+          this.calculateSPM();
+          this.reset();
+          
+        }
+      }, 1000);
     },
     pressingKey(event) {
       const key = event.key;
@@ -42,10 +69,17 @@ export default {
 
       if (key.length === 1) {
         this.letterStates[this.currentIndex] = key === expectedKey ? 'correct' : 'incorrect';
+        this.letterStates[this.currentIndex+1] = 'current';
         this.currentIndex++;
+
       } else if (key === 'Backspace' && this.currentIndex > 0) {
         this.letterStates[this.currentIndex-1] = 'default';
         this.currentIndex--;
+      }
+
+      if (this.$refs.letter[this.currentIndex].getBoundingClientRect().top > 250) {
+        console.log(this.$refs.words.style);
+        this.$refs.words.style.marginTop = (parseInt((this.$refs.words.style.marginTop || '0px')) -35) + 'px';
       }
 
       // Обновляем курсор после изменения индекса
@@ -63,6 +97,8 @@ export default {
           left: rect.left + 'px',
           top: rect.top + 'px'
         };
+
+        
       }
     }
   }
@@ -73,13 +109,13 @@ export default {
   <main>
     <h1>Speed Typing Test</h1>
     <div id="header">
-      <div id="info">30</div>
+      <div id="info"><span style="cursor: pointer" @click="timer-=10">- </span>{{ SPM === 0 ? timer : 'SPM is ' + SPM }}<span style="cursor: pointer"  @click="timer+=10"> +</span></div>
       <div id="buttons">
         <button @click="newGame()">New game</button>
       </div>
     </div>
-    <div id="game" tabindex="0" @keydown="pressingKey($event)">
-      <div id="words">
+    <div id="game" tabindex="0" @keydown="pressingKey($event)" ref="game">
+      <div id="words" ref="words">
         <span v-for="(letter, index) in letters" 
               :key="index" 
               ref="letter"  
@@ -160,7 +196,7 @@ export default {
     color: #f55;
   }
   
-  .letter.current {
+  .current {
   font-weight: bold;
   color: var(--primaryColor);
   }
