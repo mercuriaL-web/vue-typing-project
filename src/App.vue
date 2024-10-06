@@ -18,9 +18,10 @@ export default {
   methods: {
     
     setRecord(value) {
-      if (value > localStorage.getItem('record')) {
+      if (value > this.record) {
+        this.record = value;
         localStorage.setItem('record', value);
-        alert('new record is ' + localStorage.getItem('record'));
+        alert('new record is ' + this.record);
       } 
     },
     calculateSPM() {
@@ -58,7 +59,7 @@ export default {
       this.letters = [];
       this.currentIndex = 0;
       this.letterStates = [];
-
+      this.$refs.words.style.marginTop = 0;
       this.cursorStyle = { left: "0px", top: "0px" };
     },
     randomWord() {
